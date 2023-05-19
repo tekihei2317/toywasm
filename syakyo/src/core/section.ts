@@ -1,6 +1,8 @@
 import { Buffer } from "./buffer.ts";
+import { ValType, Op } from "./type.ts";
+import { InstrNode } from "./instruction.ts";
 
-abstract class SectionNode {
+export abstract class SectionNode {
   static create(sectionId: number): SectionNode {
     switch (sectionId) {
       case 1:
@@ -16,17 +18,6 @@ abstract class SectionNode {
 
   abstract load(buffer: Buffer): void;
 }
-
-type I32 = 0x7f;
-type I64 = 0x73;
-type F32 = 0x7d;
-type F64 = 0x7c;
-type NumType = I32 | I64 | F32 | F64;
-type FuncRef = 0x70;
-type ExternRef = 0x6f;
-type RefType = FuncRef | ExternRef;
-// VecTypeが追加されてそうm
-type ValType = NumType | RefType;
 
 export class ResultTypeNode {
   valTypes: ValType[] = [];
@@ -91,42 +82,6 @@ export class LocalsNode {
   }
 }
 
-const Op = {
-  I32Const: 0x41,
-  End: 0x0b,
-} as const;
-
-type Op = (typeof Op)[keyof typeof Op];
-
-export class InstrNode {
-  opcode: Op;
-
-  static create(opcode: Op): InstrNode | null {
-    switch (opcode) {
-      case Op.I32Const:
-        return new I32ConstInstrNode(opcode);
-      default:
-        return null;
-    }
-  }
-
-  constructor(opcode: Op) {
-    this.opcode = opcode;
-  }
-
-  load(buffer: Buffer) {
-    //
-  }
-}
-
-export class I32ConstInstrNode extends InstrNode {
-  num!: number;
-
-  load(buffer: Buffer) {
-    this.num = buffer.readI32();
-  }
-}
-
 export class ExprNode {
   instrs: InstrNode[] = [];
   endOp!: Op;
@@ -187,34 +142,5 @@ export class CodeSectionNode extends SectionNode {
       code.load(buffer);
       return code;
     });
-  }
-}
-
-export class ModuleNode {
-  magic?: Uint8Array;
-  version?: Uint8Array;
-  sections: SectionNode[] = [];
-
-  load(buffer: Buffer) {
-    this.magic = buffer.readBytes(4);
-    this.version = buffer.readBytes(4);
-
-    while (true) {
-      if (buffer.eof) break;
-
-      const section = this.loadSection(buffer);
-      this.sections.push(section);
-    }
-  }
-
-  loadSection(buffer: Buffer): SectionNode {
-    const sectionId = buffer.readByte();
-    const sectionSize = buffer.readU32();
-    const sectionsBuffer = buffer.readBuffer(sectionSize);
-
-    const section = SectionNode.create(sectionId);
-    section.load(sectionsBuffer);
-
-    return section;
   }
 }

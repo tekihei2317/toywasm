@@ -1,11 +1,21 @@
 import { Buffer } from "./buffer.ts";
-import { Op } from "./type.ts";
+import { BlockType, LabelIdx, Op } from "./type.ts";
 
 export class InstrNode {
   opcode: Op;
 
   static create(opcode: Op): InstrNode | null {
     switch (opcode) {
+      case Op.Block:
+        return new BlockInstrNode(opcode);
+      case Op.Loop:
+        return new LoopInstrNode(opcode);
+      case Op.If:
+        return new IfInstrNode(opcode);
+      case Op.Br:
+        return new BrInstrNode(opcode);
+      case Op.BrIf:
+        return new BrIfInstrNode(opcode);
       case Op.LocalGet:
         return new LocalGetInstrNode(opcode);
       case Op.LocalSet:
@@ -65,5 +75,83 @@ export class LocalSetInstrNode extends InstrNode {
 
   load(buffer: Buffer) {
     this.localIdx = buffer.readU32();
+  }
+}
+
+export class ExprNode {
+  instrs: InstrNode[] = [];
+  endOp!: Op;
+
+  load(buffer: Buffer) {
+    while (true) {
+      const opcode = buffer.readByte() as Op;
+      if (opcode === Op.End || opcode === Op.Else) {
+        this.endOp = opcode;
+        break;
+      }
+
+      const instr = InstrNode.create(opcode);
+      if (!instr) {
+        throw new Error(`invalid opcode: 0x${opcode.toString(16)}`);
+      }
+      instr.load(buffer);
+      this.instrs.push(instr);
+
+      if (buffer.eof) break;
+    }
+  }
+}
+
+export class IfInstrNode extends InstrNode {
+  blockType!: BlockType;
+  thenInstrs!: ExprNode;
+  elseInstrs?: ExprNode;
+
+  load(buffer: Buffer) {
+    this.blockType = buffer.readByte();
+    this.thenInstrs = new ExprNode();
+    this.thenInstrs.load(buffer);
+    if (this.thenInstrs.endOp === Op.Else) {
+      this.elseInstrs = new ExprNode();
+      this.elseInstrs.load(buffer);
+    }
+  }
+}
+
+export class BlockInstrNode extends InstrNode {
+  blockType!: BlockType;
+  instrs!: ExprNode;
+
+  load(buffer: Buffer) {
+    this.blockType = buffer.readByte();
+    this.instrs = new ExprNode();
+    this.instrs.load(buffer);
+  }
+}
+
+export class LoopInstrNode extends InstrNode {
+  blockType!: BlockType;
+  instrs!: ExprNode;
+
+  load(buffer: Buffer) {
+    this.blockType = buffer.readByte();
+    this.instrs = new ExprNode();
+    this.instrs.load(buffer);
+  }
+}
+
+export class BrInstrNode extends InstrNode {
+  labelIdx!: LabelIdx;
+
+  load(buffer: Buffer) {
+    this.labelIdx = buffer.readU32();
+  }
+}
+
+export class BrIfInstrNode extends InstrNode {
+  labelIdx!: LabelIdx;
+
+  load(buffer: Buffer) {
+    this.labelIdx = buffer.readU32();
   }
 }

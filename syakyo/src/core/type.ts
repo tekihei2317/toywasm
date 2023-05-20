@@ -10,6 +10,12 @@ type RefType = FuncRef | ExternRef;
 export type ValType = NumType | RefType;
 
 export const Op = {
+  Block: 0x02,
+  Loop: 0x03,
+  If: 0x04,
+  Else: 0x05,
+  Br: 0x0c,
+  BrIf: 0x0d,
   LocalGet: 0x20,
   LocalSet: 0x21,
   I32Const: 0x41,
@@ -22,3 +28,7 @@ export const Op = {
 } as const;
 
 export type Op = (typeof Op)[keyof typeof Op];
+
+type S33 = number;
+export type BlockType = 0x40 | ValType | S33;
+export type LabelIdx = number;

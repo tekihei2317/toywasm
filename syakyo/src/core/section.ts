@@ -1,6 +1,6 @@
 import { Buffer } from "./buffer.ts";
-import { ValType, Op } from "./type.ts";
-import { InstrNode } from "./instruction.ts";
+import { ValType } from "./type.ts";
+import { ExprNode } from "./instruction.ts";
 
 export abstract class SectionNode {
   static create(sectionId: number): SectionNode {
@@ -81,30 +81,6 @@ export class LocalsNode {
   load(buffer: Buffer) {
     this.num = buffer.readU32();
     this.valType = buffer.readByte() as ValType;
-  }
-}
-
-export class ExprNode {
-  instrs: InstrNode[] = [];
-  endOp!: Op;
-
-  load(buffer: Buffer) {
-    while (true) {
-      const opcode = buffer.readByte() as Op;
-      if (opcode === Op.End) {
-        this.endOp = opcode;
-        break;
-      }
-
-      const instr = InstrNode.create(opcode);
-      if (!instr) {
-        throw new Error(`invalid opcode: 0x${opcode.toString(16)}`);
-      }
-      instr.load(buffer);
-      this.instrs.push(instr);
-
-      if (buffer.eof) break;
-    }
   }
 }
 

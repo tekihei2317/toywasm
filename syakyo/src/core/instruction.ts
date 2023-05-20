@@ -1,5 +1,5 @@
 import { Buffer } from "./buffer.ts";
-import { BlockType, LabelIdx, Op } from "./type.ts";
+import { BlockType, FuncIdx, LabelIdx, Op } from "./type.ts";
 
 export class InstrNode {
   opcode: Op;
@@ -16,6 +16,8 @@ export class InstrNode {
         return new BrInstrNode(opcode);
       case Op.BrIf:
         return new BrIfInstrNode(opcode);
+      case Op.Call:
+        return new CallInstrNode(opcode);
       case Op.LocalGet:
         return new LocalGetInstrNode(opcode);
       case Op.LocalSet:
@@ -153,5 +155,13 @@ export class BrIfInstrNode extends InstrNode {
 
   load(buffer: Buffer) {
     this.labelIdx = buffer.readU32();
+  }
+}
+
+export class CallInstrNode extends InstrNode {
+  funcIdx!: FuncIdx;
+
+  load(buffer: Buffer) {
+    this.funcIdx = buffer.readU32();
   }
 }

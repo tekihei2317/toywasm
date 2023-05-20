@@ -9,6 +9,8 @@ export abstract class SectionNode {
         return new TypeSectionNode();
       case 3:
         return new FunctionSectionNode();
+      case 7:
+        return new ExportSectionNode();
       case 10:
         return new CodeSectionNode();
       default:
@@ -141,6 +143,39 @@ export class CodeSectionNode extends SectionNode {
       const code = new CodeNode();
       code.load(buffer);
       return code;
+    });
+  }
+}
+
+export class ExportDescNode {
+  tag!: number;
+  index!: number;
+
+  load(buffer: Buffer) {
+    this.tag = buffer.readByte();
+    this.index = buffer.readU32();
+  }
+}
+
+export class ExportNode {
+  name!: string;
+  exportDesc!: ExportDescNode;
+
+  load(buffer: Buffer) {
+    this.name = buffer.readName();
+    this.exportDesc = new ExportDescNode();
+    this.exportDesc.load(buffer);
+  }
+}
+
+export class ExportSectionNode extends SectionNode {
+  exports: ExportNode[] = [];
+
+  load(buffer: Buffer) {
+    this.exports = buffer.readVec<ExportNode>(() => {
+      const ex = new ExportNode();
+      ex.load(buffer);
+      return ex;
     });
   }
 }

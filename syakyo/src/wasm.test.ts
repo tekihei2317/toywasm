@@ -25,6 +25,25 @@ Deno.test("load const.wat", async () => {
   const code = await Deno.readFile(fromRelativePath("../data/const.wasm"));
   const wasmBuffer = new WasmBuffer(code);
   const wasmModule = new WasmModule();
+
   wasmModule.load(wasmBuffer);
   assertEquals(3, wasmModule.sections.length);
+});
+
+Deno.test("load local.wat", async () => {
+  const code = await Deno.readFile(fromRelativePath("../data/local.wasm"));
+  const wasmBuffer = new WasmBuffer(code);
+  const wasmModule = new WasmModule();
+
+  wasmModule.load(wasmBuffer);
+  assertEquals(3, wasmModule.sections.length);
+});
+
+Deno.test("load add.wat", async () => {
+  const code = await Deno.readFile(fromRelativePath("../data/add.wasm"));
+  const wasmBuffer = new WasmBuffer(code);
+  const wasmModule = new WasmModule();
+
+  wasmModule.load(wasmBuffer);
+  assertEquals(4, wasmModule.sections.length);
 });

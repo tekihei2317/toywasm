@@ -10,7 +10,14 @@ type RefType = FuncRef | ExternRef;
 export type ValType = NumType | RefType;
 
 export const Op = {
+  LocalGet: 0x20,
+  LocalSet: 0x21,
   I32Const: 0x41,
+  I32Eqz: 0x45,
+  I32LtS: 0x48,
+  I32GeS: 0x4e,
+  I32Add: 0x6a,
+  I32RemS: 0x6f,
   End: 0x0b,
 } as const;
 

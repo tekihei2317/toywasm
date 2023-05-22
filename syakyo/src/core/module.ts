@@ -28,4 +28,13 @@ export class ModuleNode {
 
     return section;
   }
+
+  store(buffer: Buffer) {
+    if (this.magic) buffer.writeBytes(this.magic);
+    if (this.version) buffer.writeBytes(this.version);
+
+    for (const section of this.sections) {
+      section.store(buffer);
+    }
+  }
 }

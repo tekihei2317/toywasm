@@ -44,6 +44,10 @@ export class InstrNode {
   }
 
   load(buffer: Buffer) {}
+
+  store(buffer: Buffer) {
+    buffer.writeByte(this.opcode);
+  }
 }
 
 export class I32ConstInstrNode extends InstrNode {
@@ -51,6 +55,11 @@ export class I32ConstInstrNode extends InstrNode {
 
   load(buffer: Buffer) {
     this.num = buffer.readI32();
+  }
+
+  store(buffer: Buffer) {
+    super.store(buffer);
+    buffer.writeI32(this.num);
   }
 }
 
@@ -101,6 +110,13 @@ export class ExprNode {
 
       if (buffer.eof) break;
     }
+  }
+
+  store(buffer: Buffer) {
+    for (const instr of this.instrs) {
+      instr.store(buffer);
+    }
+    buffer.writeByte(this.endOp);
   }
 }
 

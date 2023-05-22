@@ -1,15 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.188.0/testing/asserts.ts";
 import { WasmModule, WasmBuffer } from "./wasm.ts";
-import {
-  fromFileUrl,
-  dirname,
-  join,
-} from "https://deno.land/std@0.188.0/path/mod.ts";
-
-function fromRelativePath(relativePath: string): string {
-  const dir = dirname(fromFileUrl(import.meta.url));
-  return join(dir, relativePath);
-}
+import { fromRelativePath } from "./path.ts";
 
 Deno.test("load module.wat", async () => {
   const code = await Deno.readFile(fromRelativePath("../data/module.wasm"));

@@ -19,6 +19,7 @@ export abstract class SectionNode {
   }
 
   abstract load(buffer: Buffer): void;
+  abstract store(buffer: Buffer): void;
 }
 
 export class ResultTypeNode {
@@ -28,6 +29,10 @@ export class ResultTypeNode {
     this.valTypes = buffer.readVec<ValType>(() => {
       return buffer.readByte() as ValType;
     });
+  }
+
+  store(buffer: Buffer) {
+    buffer.writeVec(this.valTypes, (valType) => buffer.writeByte(valType));
   }
 }
 
@@ -46,6 +51,12 @@ export class FuncTypeNode {
     this.resultType = new ResultTypeNode();
     this.resultType.load(buffer);
   }
+
+  store(buffer: Buffer) {
+    buffer.writeByte(FuncTypeNode.TAG);
+    this.paramType.store(buffer);
+    this.resultType.store(buffer);
+  }
 }
 
 type TypeIdx = number;
@@ -62,6 +73,15 @@ export class TypeSectionNode extends SectionNode {
       return funcType;
     });
   }
+
+  store(buffer: Buffer) {
+    buffer.writeByte(1);
+    const sectionsBuffer = new Buffer({ buffer: new ArrayBuffer(1024) });
+    sectionsBuffer.writeVec(this.funcTypes, (funcType) =>
+      funcType.store(sectionsBuffer)
+    );
+    buffer.append(sectionsBuffer);
+  }
 }
 
 export class FunctionSectionNode extends SectionNode {
@@ -72,6 +92,15 @@ export class FunctionSectionNode extends SectionNode {
       return buffer.readU32();
     });
   }
+
+  store(buffer: Buffer) {
+    buffer.writeByte(3);
+    const sectionsBuffer = new Buffer({ buffer: new ArrayBuffer(1024) });
+    sectionsBuffer.writeVec(this.typeIndexes, (typeIdx) =>
+      sectionsBuffer.writeU32(typeIdx)
+    );
+    buffer.append(sectionsBuffer);
+  }
 }
 
 export class LocalsNode {
@@ -81,6 +110,11 @@ export class LocalsNode {
   load(buffer: Buffer) {
     this.num = buffer.readU32();
     this.valType = buffer.readByte() as ValType;
+  }
+
+  store(buffer: Buffer) {
+    buffer.writeU32(this.num);
+    buffer.writeByte(this.valType);
   }
 }
 
@@ -97,6 +131,11 @@ export class FuncNode {
     this.expr = new ExprNode();
     this.expr.load(buffer);
   }
+
+  store(buffer: Buffer) {
+    buffer.writeVec(this.localses, (locals) => locals.store(buffer));
+    this.expr?.store(buffer);
+  }
 }
 
 export class CodeNode {
@@ -108,6 +147,12 @@ export class CodeNode {
     const funcBuffer = buffer.readBuffer(this.size);
     this.func = new FuncNode();
     this.func.load(funcBuffer);
+  }
+
+  store(buffer: Buffer) {
+    const funcBuffer = new Buffer({ buffer: new ArrayBuffer(1024) });
+    this.func?.store(funcBuffer);
+    buffer.append(funcBuffer);
   }
 }
 
@@ -121,6 +166,13 @@ export class CodeSectionNode extends SectionNode {
       return code;
     });
   }
+
+  store(buffer: Buffer) {
+    buffer.writeByte(10);
+    const sectionsBuffer = new Buffer({ buffer: new ArrayBuffer(1024) });
+    sectionsBuffer.writeVec(this.codes, (code) => code.store(sectionsBuffer));
+    buffer.append(sectionsBuffer);
+  }
 }
 
 export class ExportDescNode {
@@ -130,6 +182,11 @@ export class ExportDescNode {
   load(buffer: Buffer) {
     this.tag = buffer.readByte();
     this.index = buffer.readU32();
+  }
+
+  store(buffer: Buffer) {
+    buffer.writeByte(this.tag);
+    buffer.writeU32(this.index);
   }
 }
 
@@ -142,6 +199,11 @@ export class ExportNode {
     this.exportDesc = new ExportDescNode();
     this.exportDesc.load(buffer);
   }
+
+  store(buffer: Buffer) {
+    buffer.writeName(this.name);
+    this.exportDesc.store(buffer);
+  }
 }
 
 export class ExportSectionNode extends SectionNode {
@@ -153,5 +215,11 @@ export class ExportSectionNode extends SectionNode {
       ex.load(buffer);
       return ex;
     });
+  }
+
+  store(buffer: Buffer) {
+    buffer.writeByte(7);
+    const sectionsBuffer = new Buffer({ buffer: new ArrayBuffer(1024) });
+    sectionsBuffer.writeVec(this.exports, (ex) => ex.store(sectionsBuffer));
   }
 }

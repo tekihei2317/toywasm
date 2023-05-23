@@ -1,5 +1,12 @@
 import { Buffer } from "./buffer.ts";
-import { SectionNode } from "./section.ts";
+import { Instance } from "./instance.ts";
+import {
+  CodeSectionNode,
+  ExportSectionNode,
+  FunctionSectionNode,
+  SectionNode,
+  TypeSectionNode,
+} from "./section.ts";
 
 export class ModuleNode {
   magic?: Uint8Array;
@@ -36,5 +43,38 @@ export class ModuleNode {
     for (const section of this.sections) {
       section.store(buffer);
     }
+  }
+
+  instantiate(): Instance {
+    console.log("instantiate");
+    const inst = new Instance(this);
+    inst.compile();
+    return inst;
+  }
+
+  // deno-lint-ignore ban-types
+  getSection<S extends SectionNode>(cls: Function): S | null {
+    for (const section of this.sections) {
+      if (section instanceof cls) {
+        return section as S;
+      }
+    }
+    return null;
+  }
+
+  get typeSection(): TypeSectionNode | null {
+    return this.getSection<TypeSectionNode>(TypeSectionNode);
+  }
+
+  get functionSection(): FunctionSectionNode | null {
+    return this.getSection<FunctionSectionNode>(FunctionSectionNode);
+  }
+
+  get exportSection(): ExportSectionNode | null {
+    return this.getSection<ExportSectionNode>(ExportSectionNode);
+  }
+
+  get codeSection(): CodeSectionNode | null {
+    return this.getSection<CodeSectionNode>(CodeSectionNode);
   }
 }

@@ -1,6 +1,6 @@
 import { Buffer } from "./buffer.ts";
 import { ValType } from "./type.ts";
-import { ExprNode } from "./instruction.ts";
+import { ExprNode } from "./instruction-node.ts";
 
 export abstract class SectionNode {
   static create(sectionId: number): SectionNode {

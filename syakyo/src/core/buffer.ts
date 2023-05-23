@@ -1,5 +1,5 @@
 export class Buffer {
-  private cursor = 0;
+  protected cursor = 0;
   private view!: DataView;
   public buffer!: ArrayBuffer;
 
@@ -107,7 +107,7 @@ export class Buffer {
   }
 
   readI32(): number {
-    return this.readU32();
+    return this.readS32();
   }
 
   writeI32(num: number) {
@@ -164,5 +164,23 @@ export class Buffer {
 
   get eof(): boolean {
     return this.byteLength <= this.cursor;
+  }
+}
+
+export class StackBuffer extends Buffer {
+  readBytes(size: number): Uint8Array {
+    if (this.cursor - size < 0) {
+      return new Uint8Array(0);
+    }
+    const slice = this.buffer.slice(this.cursor - size, this.cursor);
+    this.cursor = this.cursor - size;
+    return new Uint8Array(slice).reverse();
+  }
+
+  writeBytes(bytes: ArrayBuffer): void {
+    const u8s = new Uint8Array(bytes).reverse();
+    for (const byte of u8s) {
+      this.writeByte(byte);
+    }
   }
 }
